@@ -3,12 +3,12 @@
     "input_symbols": "{'a','b'}",
     "transitions": {
       "A": {
-        "a": "B",
-        "b": "A"
+        "a": "{B}",
+        "b": "{A}"
       },
       "B": {
-        "a": "B",
-        "b": "B"
+        "a": "{B}",
+        "b": "{B}"
       }
     },
     "initial_state": "A",
