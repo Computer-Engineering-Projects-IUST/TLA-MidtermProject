@@ -108,18 +108,29 @@ while queue:
             # this new set of states in DFA transition table
             if next_states:
                 ############################error :can not add transition
-
-                newTr.update({frozenset(currentSet):{symbol:next_states}})
-                # newTr[frozenset(currentSet)][symbol]=next_states
+                if frozenset(currentSet) in newTr:
+                    newTr[frozenset(currentSet)].update({symbol:next_states})
+                else:
+                     newTr.update({frozenset(currentSet):{symbol:next_states}}) 
+                # newTr[frozenset(currentSet)][symbol]=next_stfates
                 # fa["transitions"][state][key] = eval(fa["transitions"][state][key])
                 # nfa.add[(currentSet, symbol)] = frozenset(next_states)
                 # print ("if is running")
             else:
                 if {"trap"} in dfa_states:
-                    newTr.update({frozenset(currentSet):{symbol:{"trap"}}}) 
+                    if frozenset(currentSet) in newTr:
+                        newTr[frozenset(currentSet)].update({symbol:{"trap"}})
+                    else:
+                        newTr.update({frozenset(currentSet):{symbol:{"trap"}}}) 
+                    # newTr.update({frozenset(currentSet):{symbol:{"trap"}}}) 
                 else:
                     dfa_states.append({"trap"})
-                    newTr.update({frozenset(currentSet):{symbol:{"trap"}}})
+                    if frozenset(currentSet) in newTr:
+                        newTr[frozenset(currentSet)].update({symbol:{"trap"}})
+                    else:
+                        newTr.update({frozenset(currentSet):{symbol:{"trap"}}}) 
+
+                    # newTr.update({frozenset(currentSet):{symbol:{"trap"}}})
 
 # for state in dfa_states:
 #     for symbol in symbols:
@@ -131,10 +142,6 @@ while queue:
 #                 newTr.update({frozenset(state):{symbol:{"trap"}}}) 
 print("this is the end")
 
-
-
-
-####remaining: mark final states
 
 
 #     for state in states:
