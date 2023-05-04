@@ -47,16 +47,17 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
             groups.append(new_group)
 
     # Step 3: Perform reachability analysis to remove unreachable states
-    reachable_states = set([start_state])
-    queue = deque([start_state])
-    while queue:
-        state = queue.popleft()
+    reachable_states = set()
+    visited_states = set()
+    def dfs(state):
+        visited_states.add(state)
+        reachable_states.add(state)
         for symbol in symbols:
             if state in transitions:
                 next_state = transitions[state][symbol]
-                if next_state in states and next_state not in reachable_states:
-                    queue.append(next_state)
-                    reachable_states.add(next_state)
+                if next_state not in visited_states:
+                    dfs(next_state)
+    dfs(start_state)
     unreachable_states = set(states) - reachable_states
     if unreachable_states:
         for state in unreachable_states:
