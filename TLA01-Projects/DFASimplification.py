@@ -57,41 +57,46 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
     transitions = frozendict((s, frozendict((c, t) for c, t in ts.items() if t in reachable_states)) for s, ts in transitions.items() if s in reachable_states)
 
     # Step 4: Create new DFA with simplified states
-    new_states, new_final_states = set(), set()
-    for group in groups:
-        if any(state in reachable_states for state in group):
-            new_state = '_'.join(sorted(list(group)))
-            new_states.add(new_state)
-            if any(state in final_states for state in group):
-                new_final_states.add(new_state)
+    while True:
+        print ("HERE")
+        new_states, new_final_states = set(), set()
+        for group in groups:
+            if any(state in reachable_states for state in group):
+                new_state = '_'.join(sorted(list(group)))
+                new_states.add(new_state)
+                if any(state in final_states for state in group):
+                    new_final_states.add(new_state)
 
-    # Step 5: Create new transitions
-    new_transitions = {}
-    for group in groups:
-        if any(state in reachable_states for state in group):
-            group_states = [state for state in group if state in reachable_states]
-            for symbol in symbols:
-                next_state = new_transitions.get(('_'.join(sorted(group_states)), symbol), '_error')
-                for new_group in groups:
-                    if any(state in new_group for state in group_states) and all(state in reachable_states for state in new_group):
-                        new_transitions[('_'.join(sorted(group_states)), symbol)] = '_'.join(sorted(list(new_group)))
-                        break
-                else:
-                    new_transitions[('_'.join(sorted(group_states)), symbol)] = '_error'
+        # Step 5: Create new transitions
+        new_transitions = {}
+        for group in groups:
+            if any(state in reachable_states for state in group):
+                group_states = [state for state in group if state in reachable_states]
+                for symbol in symbols:
+                    next_state = new_transitions.get(('_'.join(sorted(group_states)), symbol), '_error')
+                    for new_group in groups:
+                        if any(state in new_group for state in group_states) and all(state in reachable_states for state in new_group):
+                            new_transitions[('_'.join(sorted(group_states)), symbol)] = '_'.join(sorted(list(new_group)))
+                            break
+                    else:
+                        new_transitions[('_'.join(sorted(group_states)), symbol)] = '_error'
 
-    # Step 6: Create new start state
-    new_start_state = start_state
-    for group in groups:
-        if start_state in group and any(state in reachable_states for state in group):
-            new_start_state = '_'.join(sorted(list(group)))
+        # Step 6: Create new start state
+        new_start_state = start_state
+        for group in groups:
+            if start_state in group and any(state in reachable_states for state in group):
+                new_start_state = '_'.join(sorted(list(group)))
+                break
+
+        # Step 7: Create new DFA and check if number of groups has changed
+        new_transitions_dict = {}
+        for state in new_states:
+            new_transitions_dict[state] = frozendict((symbol, new_transitions.get((state, symbol), '_error')) for symbol in symbols)
+        new_transitions = frozendict(new_transitions_dict)
+        new_dfa = (sorted(new_states), new_transitions, new_final_states)
+        if len(groups) == len(new_dfa[0]):
             break
-
-    # Step 7: Create new DFA and return
-    new_transitions_dict = {}
-    for state in new_states:
-        new_transitions_dict[state] = frozendict((symbol, new_transitions.get((state, symbol), '_error')) for symbol in symbols)
-    new_transitions = frozendict(new_transitions_dict)
-    new_dfa = (sorted(new_states), new_transitions, new_final_states)
+        groups = [set(state_group.split('_')) for state_group in new_dfa[0]]
 
     return new_dfa
 
@@ -132,21 +137,21 @@ if __name__ == '__main__':
                         from ex
 
 
-# states = list(dfa.states)
-# states.sort()
-# # print(type(states))
-# #print(states)
+states = list(dfa.states)
+states.sort()
+# print(type(states))
+#print(states)
 
-# symbols = list(dfa.input_symbols)
-# symbols.sort()
-# #print(symbols)
+symbols = list(dfa.input_symbols)
+symbols.sort()
+#print(symbols)
 
-# start_state = dfa.initial_state
-# #print(type(start_state))
-# final_states = dfa.final_states
-# #print(type(final_states))
+start_state = dfa.initial_state
+#print(type(start_state))
+final_states = dfa.final_states
+#print(type(final_states))
 
-# Trans = dfa.transitions
+Trans = dfa.transitions
 #print (Trans['q0']['0'])
 
 
@@ -171,21 +176,21 @@ if __name__ == '__main__':
 # print(NewDFA.final_states)
 
 # Define the states and symbols of the DFA
-states = ['q0', 'q1', 'q2', 'q3', 'q4']
-symbols = ['0', '1']
+# states = ['q0', 'q1', 'q2', 'q3', 'q4']
+# symbols = ['0', '1']
 
-# Define the transition function as a frozendict of frozendict values
-Trans = frozendict({
-    'q0': frozendict({'0': 'q1', '1': 'q3'}),
-    'q1': frozendict({'0': 'q2', '1': 'q4'}),
-    'q2': frozendict({'0': 'q1', '1': 'q4'}),
-    'q3': frozendict({'0': 'q2', '1': 'q4'}),
-    'q4': frozendict({'0': 'q4', '1': 'q4'})
-})
+# # Define the transition function as a frozendict of frozendict values
+# Trans = frozendict({
+#     'q0': frozendict({'0': 'q1', '1': 'q3'}),
+#     'q1': frozendict({'0': 'q2', '1': 'q4'}),
+#     'q2': frozendict({'0': 'q1', '1': 'q4'}),
+#     'q3': frozendict({'0': 'q2', '1': 'q4'}),
+#     'q4': frozendict({'0': 'q4', '1': 'q4'})
+# })
 
-# Define the start state and final states of the DFA
-start_state = 'q0'
-final_states = {'q4'}
+# # Define the start state and final states of the DFA
+# start_state = 'q0'
+# final_states = {'q4'}
 
 # print('Old DFA:')
 # # dfa = DFA(states, symbols, transitions, start_state, final_states)
