@@ -1,4 +1,3 @@
-
 import sys
 from visualize import visualize
 from FA.dfa import VisualDFA
@@ -10,7 +9,6 @@ from frozendict import frozendict
 def Star (states, symbols, Trans, start_state, final_states):
     new_dict = dict(Trans)
 
-    #print('q' + str(len(states)))
     New_Start_State = 'q' + str(len(states))
     states.append(New_Start_State)
     states.sort()
@@ -22,39 +20,19 @@ def Star (states, symbols, Trans, start_state, final_states):
 
     ConnectToStart = frozendict({"":frozenset({start_state})})
     new_dict[New_Start_State] = ConnectToStart
-    #print(f'type of new_dict[New_Start_State] is : {type (new_dict[New_Start_State])}')
+
     for FinalState in final_states:
-        print(FinalState)
-        #ConnectToFinal = frozendict({"":frozenset({New_Final_State})})
-        #print(f"ToBeAdded: {toBeAdded}")
-        # temp = dict(new_dict[FinalState])
-        # #new_dict[FinalState]= ConnectToFinal ############################################
-        # # temp.append(ConnectToFinal)
-        # # temp_frozen = frozendict(temp)
-        # # new_dict[FinalState] = temp_frozen
-        # #print(new_dict[FinalState])
-        # # print (FinalState)
-        # # print(type(new_dict[FinalState]))
-        # temp[""] = frozenset({New_Final_State})
-        # temp = set(new_dict[FinalState][""])
-        # temp.add(New_Final_State)
-        # temp = frozenset(temp)
-        # ConnectFinalToFinal = frozendict({"":temp})
-        # new_dict[FinalState] = ConnectFinalToFinal
         try:                                        # already has a lambda transition
             temp = set(new_dict[FinalState][""])
             temp.add(New_Final_State)
             temp = frozenset(temp)
             ConnectFinalToFinal = frozendict({"":temp})
             new_dict[FinalState] = ConnectFinalToFinal
+        
         except:                                     # Does not have a lambda transition
             ConnectToFinal = frozendict({"":frozenset({New_Final_State})})
             new_dict[FinalState] = ConnectToFinal
 
-    #print(new_dict)
-    # ConnectStartToFinal = frozendict({"":frozenset({New_Final_State})})
-    # new_dict[New_Start_State] = ConnectStartToFinal #########################################
-    # print("Connected start to final")
     temp = set(new_dict[New_Start_State][""])
     temp.add(New_Final_State)
     temp = frozenset(temp)
@@ -63,10 +41,8 @@ def Star (states, symbols, Trans, start_state, final_states):
 
     ConnectFinalToStart = frozendict({"":frozenset({New_Start_State})})
     new_dict[New_Final_State] = ConnectFinalToStart
-    print("Connected final to start")
 
     new_frozendict = frozendict(new_dict)
-    print(new_frozendict)
 
 if __name__ == '__main__':
     """ the main function for visualize the FA"""
