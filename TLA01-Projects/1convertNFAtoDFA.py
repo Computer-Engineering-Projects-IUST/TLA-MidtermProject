@@ -6,14 +6,11 @@ from utils import read_fa, create_standard_fa
 
 from automata.fa.nfa import NFA
 
-# from visual_automata.fa.nfa import VisualNFA
-
-
 if __name__ == '__main__':
     """ the main function for visualize the FA"""
     args = sys.argv[1:]
     #json_path = args[0]   # the relative path of the json file containing the dfa or nfa in the desired format
-    json_path = "samples/phase1-sample/in/input2.json"#args[0]  
+    json_path = "samples/phase1-sample/in/input1.json"
     try:
             read_fa(json_path)
             fa = create_standard_fa(1)
@@ -23,49 +20,32 @@ if __name__ == '__main__':
                             "mentioned a correct file or its in the correct standard format")\
             from ex
 
-#     visualize(json_path)  # visualize the FA
-#     print(nfa.initial_state)
+    # visualize(json_path)  # visualize the FA
 
     states=list(nfa.states)
     symbols=list(nfa.input_symbols)
     symbols.sort()
-#     print(symbols)
     states.sort()
-#     print (states)
-#     table = []
-#     needTrap=False
-#     newStates=[['0','0']]
-#     newStates.remove(['0','0'])
-#     set=[]
-#     newStart=set(nfa.initial_state)
 newStart={nfa.initial_state}
 newFinal={"0"}
 newFinal.remove("0")
 
-
-###test
-newTr={ frozenset({'d1'}): {
-        'name': {'bob'},
-        'place': {'lawn'},
-        'animal': {'man'}
-    }}
-newTr.clear()
+newTr={}
 
 print(type(newTr))
 print(type(nfa.transitions['q0']))
-###
 
-
-
-#    print(nfa.transitions[states[0]][symbols[0]])
 if("" in nfa.transitions[nfa.initial_state]):
-        newStart.union(set(nfa.transitions[nfa.initial_state][""]))
-        # print(newStart)
+    for ns in list(nfa.transitions[nfa.initial_state][""]):
+        newStart.add(ns)
 
 
 queue = [newStart]
 dfa_states=[newStart]
-print(dfa_states)
+for x in nfa.final_states:
+    if(x in newStart):
+        newFinal.add(frozenset(newStart))
+        break
 
 while queue:
         currentSet = queue.pop(0)
@@ -74,13 +54,23 @@ while queue:
             next_states.remove("a")
             for currentState in currentSet:
                 if(symbol in nfa.transitions[currentState]):
+                    for temp in list(nfa.transitions[currentState][symbol]):
                         
-                    temp=list(nfa.transitions[currentState][symbol])[0]
-                    next_states.add(temp)
-                    while( "" in nfa.transitions[temp]):
-                        next_states.add(list(nfa.transitions[temp][""])[0])
-                        temp=list(nfa.transitions[temp][""])[0]
-                
+                        next_states.add(temp)
+                        Lstack=[]
+                        if "" in nfa.transitions[temp]:
+                            for lambdaT in list (nfa.transitions[temp][""] ):
+                                Lstack.append(lambdaT)
+                                next_states.add(lambdaT)
+                            while( Lstack):
+                                Ltemp=Lstack[0]
+                                Lstack.remove(Ltemp)
+                                if "" in nfa.transitions[Ltemp]:
+                                    for t in list (nfa.transitions[Ltemp][""] ):
+                                        next_states.add(t)
+                                        Lstack.append(t)
+                        
+
             if next_states and next_states not in dfa_states:
                 dfa_states.append(next_states)
                 queue.append(next_states)
@@ -104,6 +94,10 @@ while queue:
                         newTr.update({'-'.join(currentSet):{symbol:{"trap"}}}) 
                 else:
                     dfa_states.append({"trap"})
+                    newTr.update({"trap":{symbols[0]:{"trap"}}})
+                    for trapS in symbols:
+                        newTr["trap"].update({trapS:{"trap"}})
+
                     if '-'.join(currentSet) in newTr:
                         newTr['-'.join(currentSet)].update({symbol:{"trap"}})
                     else:
@@ -125,10 +119,4 @@ fa["transitions"]=newTr
 nfa = VisualNFA(fa)
 nfa.show_diagram()
 print("done")
-
-
-
-
-
-
 
