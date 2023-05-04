@@ -6,6 +6,21 @@ from utils import read_fa, create_standard_fa
 from frozendict import frozendict
 
 
+def AddLambda (Source, Dest, Dict):     # Does not have a lambda transition
+    ConnectToSRC = frozendict({"":frozenset({Dest})})
+    Dict[Source] = ConnectToSRC
+    return Dict[Source]
+
+def AppendLambda(Source, Dest, Dict):   # already has a lambda transition
+    temp = set(Dict[Source][""])
+    temp.add(Dest)
+    temp = frozenset(temp)
+    ConnectSRCToFinal = frozendict({"":temp})
+    Dict[Source] = ConnectSRCToFinal
+    return Dict[Source]
+
+
+
 def Star (states, symbols, Trans, start_state, final_states):
     new_dict = dict(Trans)
 
@@ -18,31 +33,43 @@ def Star (states, symbols, Trans, start_state, final_states):
     states.sort()
     print (states)
 
-    ConnectToStart = frozendict({"":frozenset({start_state})})
-    new_dict[New_Start_State] = ConnectToStart
+    # ConnectToStart = frozendict({"":frozenset({start_state})})
+    # new_dict[New_Start_State] = ConnectToStart
+    new_dict[New_Start_State] = AddLambda(New_Start_State, start_state, new_dict)
 
     for FinalState in final_states:
         try:                                        # already has a lambda transition
-            temp = set(new_dict[FinalState][""])
-            temp.add(New_Final_State)
-            temp = frozenset(temp)
-            ConnectFinalToFinal = frozendict({"":temp})
-            new_dict[FinalState] = ConnectFinalToFinal
+            # temp = set(new_dict[FinalState][""])
+            # temp.add(New_Final_State)
+            # temp = frozenset(temp)
+            # ConnectFinalToFinal = frozendict({"":temp})
+            # new_dict[FinalState] = ConnectFinalToFinal
+            new_dict[FinalState] = AppendLambda(FinalState, New_Final_State, new_dict)
         
         except:                                     # Does not have a lambda transition
-            ConnectToFinal = frozendict({"":frozenset({New_Final_State})})
-            new_dict[FinalState] = ConnectToFinal
+            # ConnectToFinal = frozendict({"":frozenset({New_Final_State})})
+            # new_dict[FinalState] = ConnectToFinal
+            new_dict[FinalState] = AddLambda(FinalState, New_Final_State, new_dict)
 
-    temp = set(new_dict[New_Start_State][""])
-    temp.add(New_Final_State)
-    temp = frozenset(temp)
-    ConnectStartToFinal = frozendict({"":temp})
-    new_dict[New_Start_State] = ConnectStartToFinal
 
-    ConnectFinalToStart = frozendict({"":frozenset({New_Start_State})})
-    new_dict[New_Final_State] = ConnectFinalToStart
+    # temp = set(new_dict[New_Start_State][""])
+    # temp.add(New_Final_State)
+    # temp = frozenset(temp)
+    # ConnectStartToFinal = frozendict({"":temp})
+    # new_dict[New_Start_State] = ConnectStartToFinal
+    new_dict[New_Start_State] = AppendLambda(New_Start_State, New_Final_State, new_dict)
+
+    # ConnectFinalToStart = frozendict({"":frozenset({New_Start_State})})
+    # new_dict[New_Final_State] = ConnectFinalToStart
+    new_dict[New_Final_State] = AddLambda(New_Final_State, New_Start_State, new_dict)
 
     new_frozendict = frozendict(new_dict)
+
+    print(new_frozendict)
+
+
+#def Star (states1, symbols, Trans1, start_state1, final_states1, states2, Trans2, start_state2, final_states2):
+
 
 if __name__ == '__main__':
     """ the main function for visualize the FA"""
