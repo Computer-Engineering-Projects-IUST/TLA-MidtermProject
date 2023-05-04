@@ -71,7 +71,7 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
         if any(state in reachable_states for state in group):
             group_states = [state for state in group if state in reachable_states]
             for symbol in symbols:
-                next_state = transitions[group_states[0]][symbol]
+                next_state = new_transitions.get(('_'.join(sorted(group_states)), symbol), '_error')
                 for new_group in groups:
                     if any(state in new_group for state in group_states) and all(state in reachable_states for state in new_group):
                         new_transitions[('_'.join(sorted(group_states)), symbol)] = '_'.join(sorted(list(new_group)))
@@ -87,8 +87,35 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
             break
 
     # Step 7: Create new DFA and return
-    new_dfa = (sorted(new_states), frozendict(new_transitions), new_final_states)
+    new_transitions_dict = {}
+    for state in new_states:
+        new_transitions_dict[state] = frozendict((symbol, new_transitions.get((state, symbol), '_error')) for symbol in symbols)
+    new_transitions = frozendict(new_transitions_dict)
+    new_dfa = (sorted(new_states), new_transitions, new_final_states)
+
     return new_dfa
+
+def is_no_more_grouping_possible(states: List[str], symbols: List[str], transitions: frozendict, final_states: FrozenSet[str]) -> bool:
+    distinguishable = set()
+    for state1 in states:
+        for state2 in states:
+            if state1 != state2 and (state1 not in final_states) != (state2 not in final_states):
+                distinguishable.add((state1, state2))
+
+    while distinguishable:
+        (state1, state2) = distinguishable.pop()
+        for symbol in symbols:
+            next_state1 = transitions[state1][symbol]
+            next_state2 = transitions[state2][symbol]
+            if (next_state1, next_state2) in distinguishable:
+                continue
+            elif (next_state1, next_state2) not in distinguishable:
+                distinguishable.add((next_state1, next_state2))
+            if (next_state1 in final_states) != (next_state2 in final_states):
+                return False
+
+    return True
+
 
 if __name__ == '__main__':
         """ the main function for visualize the FA"""
@@ -168,11 +195,29 @@ final_states = {'q4'}
 # print(start_state)
 # print(final_states)
 
+# while is_no_more_grouping_possible(states, symbols, Trans, final_states) == False:
+#         print('New DFA:')
+#         NewDFA = simplify_dfa(states, symbols, Trans, start_state, final_states)
+#         print(NewDFA)
+#         states = NewDFA[0]
+#         Trans = NewDFA[1]
+#         final_states = NewDFA[2]
+
 
 print('New DFA:')
 NewDFA = simplify_dfa(states, symbols, Trans, start_state, final_states)
 print(NewDFA)
+states = NewDFA[0]
+print(states)
+Trans = NewDFA[1]
+print(Trans)
+final_states = NewDFA[2]
+print(final_states)
+NewDFA = simplify_dfa(states, symbols, Trans, start_state, final_states)
+print(NewDFA)
 
+# NewDFA = simplify_dfa(states, symbols, Trans, start_state, final_states)
+# print(type(NewDFA))
 
 # # Remove all unreachable states from the DFA
 # reachable_states = dfa.find_reachable_states()
