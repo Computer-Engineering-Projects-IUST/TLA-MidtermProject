@@ -5,23 +5,18 @@ from visualize import visualize
 from FA.dfa import VisualDFA
 from utils import read_fa, create_standard_fa
 
-from typing import List, Tuple, FrozenSet
-from frozendict import frozendict
-
 def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict, start_state: str, final_states: FrozenSet[str]) -> Tuple[List[str], frozendict, FrozenSet[str]]:
     # Step 1: Identify indistinguishable states
     distinguishable = set()
     for state1 in states:
         for state2 in states:
-            if state1 != state2 and (state1 not in final_states) == (state2 not in final_states):
+            if state1 != state2 and (state1 not in final_states) != (state2 not in final_states):
                 distinguishable.add((state1, state2))
     changed = True
     while changed:
         changed = False
         for (state1, state2) in distinguishable.copy():
             for symbol in symbols:
-                if state1 not in transitions or state2 not in transitions:
-                    continue
                 next_state1 = transitions[state1][symbol]
                 next_state2 = transitions[state2][symbol]
                 if (next_state1, next_state2) in distinguishable:
@@ -31,12 +26,7 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
 
     # Step 2: Group states into equivalence classes
     groups = []
-    # Group the initial state first
-    initial_group = {start_state}
-    groups.append(initial_group)
     for state in states:
-        if state == start_state:
-            continue
         found = False
         for group in groups:
             if state in group:
@@ -47,10 +37,9 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
                 found = True
                 break
         if not found:
-            new_group = {state}
-            groups.append(new_group)
+            groups.append({state})
 
-    # Step 3: Perform reachability analysis to remove unreachable states
+    # Step 3: Remove unreachable states
     reachable_states = set()
     visited_states = set()
     def dfs(state):
@@ -63,37 +52,43 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
             if next_state not in visited_states:
                 dfs(next_state)
     dfs(start_state)
-    unreachable_states = set(states) - reachable_states
-    if unreachable_states:
-        for state in unreachable_states:
-            if state == start_state:
-                raise ValueError("Initial state is unreachable.")
-            elif state in final_states:
-                raise ValueError("Final state is unreachable.")
-        states = list(filter(lambda s: s not in unreachable_states, states))
-        final_states = frozenset(filter(lambda s: s not in unreachable_states, final_states))
-        transitions = frozendict((s, frozendict((c, t) for c, t in ts.items() if t not in unreachable_states)) for s, ts in transitions.items() if s not in unreachable_states)
+    states = list(reachable_states)
+    final_states = frozenset(state for state in final_states if state in reachable_states)
+    transitions = frozendict((s, frozendict((c, t) for c, t in ts.items() if t in reachable_states)) for s, ts in transitions.items() if s in reachable_states)
 
-    # Step 4: Construct new DFA with simplified states
-    new_states = []
-    new_final_states = set()
+    # Step 4: Create new DFA with simplified states
+    new_states, new_final_states = set(), set()
+    for group in groups:
+        if any(state in reachable_states for state in group):
+            new_state = '_'.join(sorted(list(group)))
+            new_states.add(new_state)
+            if any(state in final_states for state in group):
+                new_final_states.add(new_state)
+
+    # Step 5: Create new transitions
     new_transitions = {}
     for group in groups:
-        state = next(iter(group))
-        new_states.append(state)
-        if state in final_states:
-            new_final_states.add(state)
-        for symbol in symbols:
-            if state not in transitions or symbol not in transitions[state]:
-                continue
-            next_state = transitions[state][symbol]
-            for other_group in groups:
-                if next_state in other_group:
-                    new_transitions[state] = frozendict({**new_transitions.get(state, {}), **{symbol: next(iter(other_group))}})
-                    break
-    new_start_state = next(iter(initial_group))
+        if any(state in reachable_states for state in group):
+            group_states = [state for state in group if state in reachable_states]
+            for symbol in symbols:
+                next_state = transitions[group_states[0]][symbol]
+                for new_group in groups:
+                    if any(state in new_group for state in group_states) and all(state in reachable_states for state in new_group):
+                        new_transitions[('_'.join(sorted(group_states)), symbol)] = '_'.join(sorted(list(new_group)))
+                        break
+                else:
+                    new_transitions[('_'.join(sorted(group_states)), symbol)] = '_error'
 
-    return new_states, frozendict(new_transitions), frozenset(new_final_states)
+    # Step 6: Create new start state
+    new_start_state = start_state
+    for group in groups:
+        if start_state in group and any(state in reachable_states for state in group):
+            new_start_state = '_'.join(sorted(list(group)))
+            break
+
+    # Step 7: Create new DFA and return
+    new_dfa = (sorted(new_states), frozendict(new_transitions), new_final_states)
+    return new_dfa
 
 if __name__ == '__main__':
         """ the main function for visualize the FA"""
