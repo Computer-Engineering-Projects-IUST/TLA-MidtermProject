@@ -4,6 +4,7 @@ import sys
 from visualize import visualize
 from FA.dfa import VisualDFA
 from utils import read_fa, create_standard_fa
+from collections import deque
 
 def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict, start_state: str, final_states: FrozenSet[str]) -> Tuple[List[str], frozendict, FrozenSet[str]]:
     # Step 1: Identify indistinguishable states
@@ -26,7 +27,12 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
 
     # Step 2: Group states into equivalence classes
     groups = []
+    # Group the initial state first
+    initial_group = {start_state}
+    groups.append(initial_group)
     for state in states:
+        if state == start_state:
+            continue
         found = False
         for group in groups:
             if state in group:
@@ -37,38 +43,49 @@ def simplify_dfa(states: List[str], symbols: List[str], transitions: frozendict,
                 found = True
                 break
         if not found:
-            groups.append({state})
+            new_group = {state}
+            groups.append(new_group)
 
-    # Step 3: Create new DFA with simplified states
-    new_states, new_final_states = set(), set()
-    for group in groups:
-        new_state = '_'.join(sorted(list(group)))
-        new_states.add(new_state)
-        if any(state in final_states for state in group):
-            new_final_states.add(new_state)
+    # Step 3: Perform reachability analysis to remove unreachable states
+    reachable_states = set([start_state])
+    queue = deque([start_state])
+    while queue:
+        state = queue.popleft()
+        for symbol in symbols:
+            if state in transitions:
+                next_state = transitions[state][symbol]
+                if next_state in states and next_state not in reachable_states:
+                    queue.append(next_state)
+                    reachable_states.add(next_state)
+    unreachable_states = set(states) - reachable_states
+    if unreachable_states:
+        for state in unreachable_states:
+            if state == start_state:
+                raise ValueError("Initial state is unreachable.")
+            elif state in final_states:
+                raise ValueError("Final state is unreachable.")
+        states = list(filter(lambda s: s not in unreachable_states, states))
+        final_states = frozenset(filter(lambda s: s not in unreachable_states, final_states))
+        transitions = frozendict({(s, c): t for (s, c), t in transitions.items() if s not in unreachable_states})
 
-    # Step 4: Create new transitions
+    # Step 4: Construct new DFA with simplified states
+    new_states = []
+    new_final_states = set()
     new_transitions = {}
     for group in groups:
+        state = next(iter(group))
+        new_states.append(state)
+        if state in final_states:
+            new_final_states.add(state)
         for symbol in symbols:
-            next_state = transitions[list(group)[0]][symbol]
-            for new_group in groups:
-                if next_state in new_group:
-                    new_transitions[('_'.join(sorted(list(group))), symbol)] = '_'.join(sorted(list(new_group)))
+            next_state = transitions[state][symbol]
+            for other_group in groups:
+                if next_state in other_group:
+                    new_transitions[(state, symbol)] = next(iter(other_group))
                     break
-            else:
-                new_transitions[('_'.join(sorted(list(group))), symbol)] = '_error'
+    new_start_state = next(iter(initial_group))
 
-    # Step 5: Create new start state
-    new_start_state = start_state
-    for group in groups:
-        if start_state in group:
-            new_start_state = '_'.join(sorted(list(group)))
-            break
-
-    # Step 6: Create new DFA and return
-    new_dfa = (sorted(new_states), frozendict(new_transitions), new_final_states)
-    return new_dfa
+    return new_states, frozendict(new_transitions), frozenset(new_final_states)
 
 if __name__ == '__main__':
         """ the main function for visualize the FA"""
@@ -137,7 +154,7 @@ Trans = frozendict({
 })
 
 # Define the start state and final states of the DFA
-start_state = 'q4'
+start_state = 'q0'
 final_states = {'q4'}
 
 # print('Old DFA:')
