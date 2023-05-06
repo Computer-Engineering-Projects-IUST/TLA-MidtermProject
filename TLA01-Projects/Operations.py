@@ -10,11 +10,11 @@ def ChangeTransition (OldTransition, GoalState, Symbol):
     #print(OldTransition)
     new_set = frozenset({GoalState})
     new_dict = frozendict({Symbol: new_set})
-    for key, value in OldTransition.items():
-        print(value)
-        print(new_dict)
-        OldTransition.remove(value)
-        OldTransition.update(new_dict)
+    #for key, value in OldTransition.items():
+        # print(f'value is: {value}')
+        # print(f'new_dict is: {new_dict}')
+        # OldTransition.remove(value)
+        # OldTransition.update(new_dict)
     return new_dict
 
 
@@ -74,7 +74,7 @@ def Star (states, symbols, Trans, start_state, final_states):
     New_Final_State = 'q' + str(len(states))
     states.append(New_Final_State)
     states.sort()
-    print (states)
+    #print (states)
 
     new_dict[New_Start_State] = AddLambda(New_Start_State, start_state, new_dict)
 
@@ -91,7 +91,7 @@ def Star (states, symbols, Trans, start_state, final_states):
 
     new_frozendict = frozendict(new_dict)
 
-    print(new_frozendict)
+    #print(new_frozendict)
 
 
 
@@ -183,10 +183,14 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
 
     new_dict2_copy = new_dict2.copy()
     changedStart2 = False
+    StatesRelationDict = {}
+    #print(StatesRelationDict)
     for state in states2:
         New_state = 'q' + str(len(Result_States) - len(states2) + 1)
+        StatesRelationDict[state]= New_state
+        #print (StatesRelationDict)
         Result_States.append(New_state)
-        new_dict2_copy[New_state] = ChangeTransition(new_dict2[state], New_state, 'b')
+        #new_dict2_copy[New_state] = ChangeTransition(new_dict2[state], New_state, 'b')
         #print(new_dict2_copy[New_state])
         if state == start_state2 and changedStart2 == False:
             #print(f'state is: {state} and start state2 is:  {start_state2} and new state is: {New_state}')
@@ -196,7 +200,47 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
             final_states2.remove(state)
             final_states2.update(New_state)
 
-
+    # print(new_dict2)
+    # for state in states2:
+    #     #print(set(new_dict2[state]['b']))
+    #     # if ('q1' in set(new_dict2[state]['b'])):
+    #     #     print ('state in set(new_dict2[state][''])')
+    #     for sym in symbols2:
+    #         #print(f'current symbol is: {sym}')
+    #         try:
+    #             tempset = set(new_dict2[state][sym])
+    #             tempset_copy = tempset.copy()
+    #             #print(f'1. temp set is: {tempset}')
+    #             for st in tempset_copy:
+    #                 #print(f'state is {st}')
+    #                 tempset.remove(st)
+    #                 newst = StatesRelationDict[st]
+    #                 #print(f'type of newst is: {type(newst)}')
+    #                 tempset.add(newst)
+    #                 #print('tempst updated')
+    #             #print(f'2. temp set is: {tempset}')
+    #             #print (type(new_dict2[state][sym]))
+    #             tempset = frozenset(tempset)
+    #             connection = frozendict({sym:tempset})
+    #             print(connection)
+    #             print(f'Version 1 of new_dict2_copy[state] : {new_dict2_copy[state]}')
+    #             new_dict2_copy[state] = connection
+    #             print(f'Version 2 of new_dict2_copy[state] : {new_dict2_copy[state]}')
+    #             print(tempset)
+    #         except Exception as e:
+    #             #print(f'Error is: {e}')
+    #             print()
+    #         #print("*********************")
+# """
+#     temp = set(Dict[Source][""])
+#     temp.add(Dest)
+#     temp = frozenset(temp)
+#     ConnectSRCToFinal = frozendict({"":temp})
+#     Dict[Source] = ConnectSRCToFinal
+#     return Dict[Source]
+# """
+    # print("*************")
+    # print(new_dict2_copy)
     for state in states1:
         del new_dict2_copy[state]
 
@@ -212,7 +256,7 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
         except:                                     # Does not have a lambda transition
             Result_dict[FinalState] = AddLambda(FinalState, New_Final_State, Result_dict)
 
-    #print(Result_dict)
+    print(Result_dict)
 
 if __name__ == '__main__':
     
