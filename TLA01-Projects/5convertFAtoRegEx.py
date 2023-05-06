@@ -226,17 +226,45 @@ else:
 
     # Step 3: Solve the set of equations
     ####################it has problem
-    regex = ''
-    while len(equations) > 0:
-        # Find an equation with only one variable
-        for i, eqn in enumerate(equations):
-            if len(re.findall(f'\\b{variables[dfa.initial_state]}\\b', eqn)) == 0 and len(re.findall(f'\\b{variables[list(dfa.final_states)[0]]}\\b', eqn)) == 0 and len(re.findall('[a-z0-9()]+', eqn)) == 1:
-                regex += eqn.split('=')[1]
-                var_to_remove = variables[dfa.states[i]]
-                break
+    # regex = ''
+    # while len(equations) > 0:
+    #     # Find an equation with only one variable
+    #     for i, eqn in enumerate(equations):
+    #         if len(re.findall(f'\\b{variables[dfa.initial_state]}\\b', eqn)) == 0 and len(re.findall(f'\\b{variables[list(dfa.final_states)[0]]}\\b', eqn)) == 0 and len(re.findall('[a-z0-9()]+', eqn)) == 1:
+    #             regex += eqn.split('=')[1]
+    #             var_to_remove = variables[dfa.states[i]]
+    #             break
+    #     else:
+    #         raise ValueError("Can't solve equations")
+
+    #     # Substitute variable in other equations
+    #     equations = [re.sub(f'\\b{var_to_remove}\\b', f'({regex})', eqn) for eqn in equations]
+    #     equations.pop(i)
+
+    #another code:
+    # Step 3: Solve the set of equations
+regex = ''
+while len(equations) > 0:
+    # Find an equation with only one variable
+    for i, eqn in enumerate(equations):
+        variables_in_eqn = re.findall('[a-z0-9_]+', eqn)
+        variables_in_eqn=list(dict.fromkeys(variables_in_eqn))
+        if len(variables_in_eqn) == 3 and variables_in_eqn[0] != X:
+            regex += eqn.split('=')[1]
+            var_to_remove = variables_in_eqn[0]
+            break
+    else:
+        # No equation with only one variable found
+        if len(equations) == 1:
+            # Only one equation left, so it must be solved
+            regex += equations[0].split('=')[1]
+            break
         else:
             raise ValueError("Can't solve equations")
 
-        # Substitute variable in other equations
-        equations = [re.sub(f'\\b{var_to_remove}\\b', f'({regex})', eqn) for eqn in equations]
-        equations.pop(i)
+    # Substitute variable in other equations
+    equations = [re.sub(f'\\b{var_to_remove}\\b', f'({regex})', eqn) for eqn in equations if eqn != equations[i]]
+    X = var_to_remove
+
+# Final result is stored in the regex variable
+print(regex)
