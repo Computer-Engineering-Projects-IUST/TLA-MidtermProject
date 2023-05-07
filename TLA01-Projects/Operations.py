@@ -210,18 +210,18 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
         #print(set(new_dict2[state]['b']))
         # if ('q1' in set(new_dict2[state]['b'])):
         #     print ('state in set(new_dict2[state][''])')
-        for sym in symbols2:                                                                                            # Checking for every symbol
+        for sym in symbols2:                                                                                            # Checking if there is a transition for every symbol
             #print(f'current symbol is: {sym}')
-            try:
-                tempset = set(new_dict2[state][sym])
-                tempset_copy = tempset.copy()
+            try:                                                                                                        # A state may not have a transition for a specific symbol
+                tempset = set(new_dict2[state][sym])                                                                    # set of states that this state has a transition to
+                tempset_copy = tempset.copy()                                                                           # copy of the temp set
                 #print(f'1. temp set is: {tempset}')
-                for st in tempset_copy:
+                for st in tempset_copy:                                                                                 # for each state in the copy of the tempset
                     #print(f'state is {st}')
-                    tempset.remove(st)
+                    tempset.remove(st)                                                                                  # removing the state
                     newst = StatesRelationDict[st]
                     #print(f'type of newst is: {type(newst)}')
-                    tempset.add(newst)
+                    tempset.add(newst)                                                                                  # adding the new name from the dictionary
                     #print('tempst updated')
                 #print(f'2. temp set is: {tempset}')
                 #print (type(new_dict2[state][sym]))
@@ -230,7 +230,7 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
                 # print(connection)
                 # print(f'Version 1 of new_dict2_copy[state] : {new_dict2_copy[state]}')
                 #new_dict2_copy[state] = connection
-                Result_dict[StatesRelationDict[state]] = connection
+                Result_dict[StatesRelationDict[state]] = connection                                                     # updating the result dict
                 # print(f'Version 2 of new_dict2_copy[state] : {new_dict2_copy[state]}')
                 # print(tempset)
             except Exception as e:
@@ -238,15 +238,7 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
                 print()
             #print("*********************")
 
-    #print(Result_dict)
-# """
-#     temp = set(Dict[Source][""])
-#     temp.add(Dest)
-#     temp = frozenset(temp)
-#     ConnectSRCToFinal = frozendict({"":temp})
-#     Dict[Source] = ConnectSRCToFinal
-#     return Dict[Source]
-# """
+    # print(Result_dict)
     # print("*************")
     # print(new_dict2_copy)
     # for state in states1:
@@ -256,9 +248,9 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
     #Result_dict.update(new_dict2_copy)
     #print(f'Start State2: {start_state2}   and final state2: {final_states2}')
     
-    Result_dict[New_Start_State] = AppendLambda(New_Start_State, start_state2, Result_dict)
+    Result_dict[New_Start_State] = AppendLambda(New_Start_State, start_state2, Result_dict)         # connecting the new start state to the second FA's start state with lambda
     #print (Result_dict)
-    for FinalState in final_states2:
+    for FinalState in final_states2:                                                                # connecting the final states of the second FA to the new final state with lambda
         try:                                        # already has a lambda transition
             Result_dict[FinalState] = AppendLambda(FinalState, New_Final_State, Result_dict)
         
