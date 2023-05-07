@@ -6,16 +6,16 @@ from utils import read_fa, create_standard_fa
 from frozendict import frozendict
 
 
-def ChangeTransition (OldTransition, GoalState, Symbol):
-    #print(OldTransition)
-    new_set = frozenset({GoalState})
-    new_dict = frozendict({Symbol: new_set})
-    #for key, value in OldTransition.items():
-        # print(f'value is: {value}')
-        # print(f'new_dict is: {new_dict}')
-        # OldTransition.remove(value)
-        # OldTransition.update(new_dict)
-    return new_dict
+# def ChangeTransition (OldTransition, GoalState, Symbol):
+#     #print(OldTransition)
+#     new_set = frozenset({GoalState})
+#     new_dict = frozendict({Symbol: new_set})
+#     #for key, value in OldTransition.items():
+#         # print(f'value is: {value}')
+#         # print(f'new_dict is: {new_dict}')
+#         # OldTransition.remove(value)
+#         # OldTransition.update(new_dict)
+#     return new_dict
 
 
 def AddLambda (Source, Dest, Dict):     # Does not have a lambda transition
@@ -277,7 +277,7 @@ def ConcatMain():
             read_fa(json_path1)
             fa = create_standard_fa(1)
             nfa1 = VisualNFA(fa)
-
+            final_nfa = fa
             read_fa(json_path2)
             fa = create_standard_fa(1)
             nfa2 = VisualNFA(fa)
@@ -319,10 +319,11 @@ def ConcatMain():
     #print (f'starting state2: {start_state2}')
     final_states2 = set(nfa2.final_states)
     #print (final_states2)
+    # nfa1 = VisualNFA(fa)
+    # nfa1.show_diagram()
+    Concat(final_nfa, states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2)
 
-    Concat(states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2)
-
-def Concat(states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2):
+def Concat(final_nfa, states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2):
     new_dict1 = dict(Trans1)            # Dictionary of first FA Transitions
     # print (new_dict1)
     new_dict2 = dict(Trans2)            # Dictionary of second FA Transitions
@@ -421,9 +422,13 @@ def Concat(states1, symbols1, Trans1, start_state1, final_states1, states2, symb
     
     #Result_dict[New_Start_State] = AppendLambda(New_Start_State, start_state2, Result_dict)         # connecting the new start state to the second FA's start state with lambda
     #print (Result_dict)
+    final_states2.clear()
+    
     if len(final_states1) > 1:
         Result_dict[New_Final_State2] = AddLambda(New_Final_State2, start_state2, Result_dict) ###############
+        final_states2.add(New_Final_State2)
     else:
+        final_states2.add(New_Final_State)
         #Result_dict[final_states1[0]] = AddLambda(list(final_states1)[0], start_state2, Result_dict)
         for FS in final_states1:
             Result_dict[FS] = AddLambda(FS, start_state2, Result_dict)
@@ -433,13 +438,23 @@ def Concat(states1, symbols1, Trans1, start_state1, final_states1, states2, symb
         
         except:                                     # Does not have a lambda transition
             Result_dict[FinalState] = AddLambda(FinalState, New_Final_State, Result_dict)
-
-    print(Result_dict)    
+    Result_symbs = set(symbols1 + symbols2)
+    print(Result_dict)
+    # print(type(set(New_Final_State)))
+    
+    final_nfa["initial_state"] = start_state1
+    final_nfa["states"] = set(Result_States)
+    final_nfa["transitions"] = Result_dict
+    final_nfa["input_symbols"] = set(Result_symbs)
+    final_nfa["final_states"] =  set(final_states2)
+    vis = VisualNFA(final_nfa)
+    vis.show_diagram()
 
 if __name__ == '__main__':
     
     #StarMain()
     #UnionMain()
     ConcatMain()
+    print("hello")
 
     
