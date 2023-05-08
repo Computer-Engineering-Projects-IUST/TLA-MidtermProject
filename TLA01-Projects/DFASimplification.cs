@@ -5,11 +5,81 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using TLA_Library;
+//using TLA_Library;
 namespace Phase2
 {
     public class DFAStateReduction
     {
+        public class DFA
+        {
+            public List<NewState> States;
+            public InputSymbols InputSymbols;
+            public List<NewState> FinalStates;
+            public NewState InitialState = null;
+
+            //Assign DFA fields after converting from string to objects
+            public DFA(int x, List<NewState> allStates, InputSymbols allInputSymbols, NewState initialState, List<NewState> finalStates)
+            {
+                States = allStates;
+                FinalStates = finalStates;
+                this.InputSymbols = allInputSymbols;
+                InitialState = initialState;
+            }
+            //Convert DFA fields from string to objects 
+            public DFA(List<string> allStates, List<string> allInputSymbols, string initialState, List<string> finalStates)
+            {
+                States = new List<NewState>();
+                FinalStates = new List<NewState>();
+                InputSymbols inputSymbols = new InputSymbols();
+                inputSymbols.setInputs(allInputSymbols);
+                InputSymbols = inputSymbols;
+
+                for (int i = 0; i < finalStates.Count; i++)
+                    FinalStates.Add(new NewState(finalStates[i]));
+
+                for (int i = 0; i < allStates.Count; i++)
+                    States.Add(new NewState(allStates[i]));
+
+                for (int i = 0; i < allStates.Count; i++)
+                    if (allStates[i].Equals(initialState))
+                        InitialState = States[i];
+            }
+            //Convert DFA fields from string to objects 
+            public DFA(List<NewState> states, NewState initial_state, List<NewState> final_states,List<string> input_symbols, Dictionary<string, Dictionary<string, string>> transitions)
+            {
+                States = states;
+                InitialState = initial_state;
+                FinalStates = final_states;
+                InputSymbols = new InputSymbols();
+                InputSymbols.setInputs(input_symbols);
+
+                for (int i = 0; i < States.Count(); i++)
+                {
+                    var transition = transitions[States[i].state_ID];
+                    States[i].transitions = new Dictionary<string, NewState>();
+                    foreach (var item in transition)
+                    {
+                        int state_index = States.FindIndex(x => x.state_ID == item.Value);
+                        States[i].transitions.Add(item.Key, States[state_index]);
+                    }
+                }
+            }
+        }
+        public class NewState
+        {
+            public bool Visit;
+            public string state_ID;
+            public string string_nfa_states = "";
+            public List<State> includedNFAStates;
+            public Dictionary<string, NewState> transitions;
+            //Construct new dfa state 
+            public NewState(string stateName)
+            {
+                state_ID = stateName;
+                transitions = new Dictionary<string, NewState>();
+                includedNFAStates = new List<State>();
+            }
+        }
         //DFS recursive function 
         static void DFS_Visit_Recursive(DFA dfa, NewState n, List<NewState> dfs_visit)
         {
@@ -141,7 +211,6 @@ namespace Phase2
 
                 new_dfa_states.Add(new NewState(x));
             }
-            ////////////////////////////////////////////////////
             List<NewState> new_dfa_final_states = new List<NewState>();
             for (int i = 0; i < equal_state_k.Count; i++)
             {
@@ -199,10 +268,10 @@ namespace Phase2
         }
         public static void Main(string[] args)
         {
-            var json_text = File.ReadAllText(@"../..");
+            var json_text = File.ReadAllText(@"C:/Users/win_10/TLA01-Projects/samples/phase2-sample/in/input1.json");
             DFA dfa = ConvertJsonToFA.ConvertJsonToDFA(json_text);
             DFA result = SimplificationDFA(dfa);
-            ConvertFAToJson.ConvertDFAToJson(result, @"../..");
+            ConvertFAToJson.ConvertDFAToJson(result, @"C:/Users/win_10/TLA01-Projects/samples/phase2-sample/in/outputsi.json");
         }
     }
 }

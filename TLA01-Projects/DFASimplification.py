@@ -14,47 +14,59 @@ class NewState:
         self.transitions = { }
         self.Visit = False
 
-class DFA:
-    def __init__(self, ID: int, states: List[NewState], InputSymbols: List[str], InitialState: NewState, FinalStates: List[NewState]):
-        self.ID = ID
-        self.States = states
-        self.InputSymbols = InputSymbols
-        self.InitialState = InitialState
-        self.FinalStates = FinalStates
+# class DFA:
+#     def __init__(self, ID: int, states: List[NewState], InputSymbols: List[str], InitialState: NewState, FinalStates: List[NewState]):
+#         self.ID = ID
+#         self.States = states
+#         self.InputSymbols = InputSymbols
+#         self.InitialState = InitialState
+#         self.FinalStates = FinalStates
 
-def DFS_Visit_Recursive(Visited, dfa, n: NewState, dfs_visit: List[NewState]):
-    n.Visit = True
+def DFS_Visit_Recursive(Visited, state, dfs_visit, InputSymbols, transitions):
+    Visited[state] = True
     for i in range(len(InputSymbols)):
-        if n.transitions[InputSymbols[i]].Visit == False:
-            dfs_visit.append(n.transitions[dfa.InputSymbols[i]])
-            DFS_Visit_Recursive(dfa, n.transitions[dfa.InputSymbols[i]], dfs_visit)
+        try:
+            # print(transitions[state])
+            # print(InputSymbols[i])
+            # print(transitions[state][InputSymbols[i]])
 
-def SimplificationDFA(InitialState, ) -> DFA:
+            if Visited[transitions[state][InputSymbols[i]]] == False:
+                dfs_visit.append(transitions[state][InputSymbols[i]])
+                DFS_Visit_Recursive(Visited, transitions[state][InputSymbols[i]], dfs_visit, InputSymbols, transitions)
+        except:
+            print()
+
+def SimplificationDFA(states, symbols, FrozTrans, InitialState, FinalStates):
+    Trans = dict(FrozTrans)
+    FinalStates = list(FinalStates)
     dfs_visit = []
     dfs_visit.append(InitialState)
-
+    Visited = {}
+    for s in states:
+        Visited[s] = False
     # First we go through vertexes by DFS to define non-reachable states
-    DFS_Visit_Recursive(dfa, InitialState, dfs_visit)
-    dfa.States = dfs_visit
-
+    DFS_Visit_Recursive(Visited, InitialState, dfs_visit, symbols, Trans)
+    #print(f'Visited is: {Visited}')
+    states = dfs_visit
+    
     new_final_state = []
     # Remove non-reachable states from DFA
-    for i in range(len(dfa.FinalStates)):
-        if dfa.FinalStates[i] in dfs_visit:
-            new_final_state.append(dfa.FinalStates[i])
-    dfa.FinalStates = new_final_state
+    for i in range(len(FinalStates)):
+        if FinalStates[i] in dfs_visit:
+            new_final_state.append(FinalStates[i])
+    FinalStates = new_final_state
 
     # Construct zero_equivalence by separating final and non-final states
     final = []
     nonfinal = []
-    for i in range(len(dfa.States)):
-        if dfa.States[i] in dfa.FinalStates:
-            final.append(dfa.States[i])
+    for i in range(len(states)):
+        if states[i] in FinalStates:
+            final.append(states[i])
         else:
-            nonfinal.append(dfa.States[i])
+            nonfinal.append(states[i])
 
     # Define list for k_equivalence to reach k+1_equivalence(next equivalence table)
-    equal_state_k = []
+    equal_state_k = [[]]
     equal_state_k.append(final)
     equal_state_k.append(nonfinal)
 
@@ -70,23 +82,40 @@ def SimplificationDFA(InitialState, ) -> DFA:
             for j in range(len(equal_state_k[i])):
                 x = ""
                 # Check whether we have 2 input symbols 
-                if len(dfa.InputSymbols) == 2:
+                if len(symbols) == 2:
                     # Check whether for each input symbol which equivalence list we reach + add first state of the previous list to x(string)
                     for k in range(len(equal_state_k)):
-                        if equal_state_k[k].count(equal_state_k[i][j].transitions[dfa.InputSymbols[0]]) != 0:
-                            x += equal_state_k[k][0].state_ID
-                            break
+                        # print(f"Trans[equal_state_k[i][j]][symbols[0]] is : {Trans[equal_state_k[i][j]][symbols[0]]}")
+                        # print(f"equal_state_k[k] is : {equal_state_k[k]}")
+                        try:
+                            if Trans[equal_state_k[i][j]][symbols[0]] in equal_state_k[k]:
+                                # print("Entered HERE 1")
+                                x += equal_state_k[k][0] #str
+                                break
+                        except:
+                            # print("Key not found in 1")
+                            print()
                     for k in range(len(equal_state_k)):
-                        if equal_state_k[k].count(equal_state_k[i][j].transitions[dfa.InputSymbols[1]]) != 0:
-                            x += equal_state_k[k][0].state_ID
-                            break
+                        try:
+                            if Trans[equal_state_k[i][j]][symbols[1]] in equal_state_k[k]:
+                                # print("Entered HERE 2")
+                                x += equal_state_k[k][0] #str
+                                break
+                        except:
+                            # print("Key not found in 2")
+                            print()
                 elif len(dfa.InputSymbols) == 1:
                     # Check whether we have only 1 input symbol 
                     # Repeat previous operations for one input symbol
                     for k in range(len(equal_state_k)):
-                        if equal_state_k[k].count(equal_state_k[i][j].transitions[dfa.InputSymbols[0]]) != 0:
-                            x += equal_state_k[k][0].state_ID
-                            break
+                        try:
+                            if Trans[equal_state_k[i][j]][symbols[0]] in equal_state_k[k]:
+                                # print("Entered HERE 3")
+                                x += equal_state_k[k][0] #str
+                                break
+                        except:
+                            # print("Key not found in 3")
+                            print()
 
                 # If two states go through same equivalence list in k_equivalence table they have the same equivalence list in k+1_equivalence 
                 if x in product_equal_states:
@@ -97,7 +126,7 @@ def SimplificationDFA(InitialState, ) -> DFA:
                     product_equal_states[x] = temp
 
             # Construct k+1_equivalence table
-            for tmp in product_equal_states.values():
+            for tmp in product_equal_states:
                 equal_state_k_next.append(tmp)
 
         # Check whether k+1_equivalence and k_equivalence are the same if yes --> quit while loop if no --> go through next equivalence table
@@ -105,54 +134,71 @@ def SimplificationDFA(InitialState, ) -> DFA:
             break
 
         equal_state_k = equal_state_k_next
+    print(equal_state_k)
 
     # For each equivalence list in k_equivalence table order the states by state ID
     for i in range(len(equal_state_k)):
-        equal_state_k[i] = sorted(equal_state_k[i], key=lambda x: re.sub("q", "", x.state_ID))
-
+        equal_state_k[i] = sorted(equal_state_k[i], key=lambda x: re.sub("q", "", x)) #################################
+    print(equal_state_k)
     # For every list in k_equivalence table order the states in each list by the first state of the list
-    equal_state_k = sorted(equal_state_k, key=lambda x: re.sub("q", "", x[0].state_ID))
+    equal_state_k = sorted(equal_state_k, key=lambda x: re.sub("q", "", x[0]))  ##############################
 
     # Construct new DFA by the result of equivalence table
     new_dfa_states = []
+    print(equal_state_k)
     for i in range(len(equal_state_k)):
         x = ""
         for j in range(len(equal_state_k[i])):
-            x += equal_state_k[i][j].state_ID
-
-        new_dfa_states.append(NewState(x))
+            x += equal_state_k[i][j]
+        print(f'x is: {x}')
+        new_dfa_states.append(x)
+    print(new_dfa_states)
     ###########################################################
     new_dfa_final_states = []
     for i in range (len(equal_state_k)):
-        if equal_state_k[i][0] in dfa.FinalStates :
+        if equal_state_k[i][0] in FinalStates :
             new_dfa_final_states.append(new_dfa_states[i])
 
     new_dfa_initial_state=None
     for i in range(len(equal_state_k)):
-        if(dfa.InitialState in equal_state_k[i]):
+        if(InitialState in equal_state_k[i]):
             new_dfa_initial_state=new_dfa_states[i]
             break
     
-    new_dfa = DFA(0, new_dfa_states, dfa.InputSymbols, new_dfa_initial_state, new_dfa_final_states)
-    if len(dfa.InputSymbols.inputs) == 2:
+    #new_dfa = DFA(0, new_dfa_states, symbols, new_dfa_initial_state, new_dfa_final_states)
+    if len(symbols) == 2:
         for i in range (len(equal_state_k)):
             for k in range (len(equal_state_k)):
-                if equal_state_k[i][0].transitions[dfa.InputSymbols.inputs[0]] in equal_state_k[k]:
-                    new_dfa_states[i].transitions[dfa.InputSymbols.inputs[0]] = new_dfa_states[k]
-                    break
+                try:
+                    if Trans[equal_state_k[i][j]][symbols[0]] in equal_state_k[k]:
+                        # print("Entered HERE 4")
+                        Trans[new_dfa_states[i]][symbols[0]] = new_dfa_states[k]
+                        # print("Entered HERE 5")
+                        break
+                except:
+                    # print("Key not found in 4")
+                    print()
             for k in range (len(equal_state_k)):
-                if equal_state_k[i][0].transitions[dfa.InputSymbols.inputs[1]] in equal_state_k[k]:
-                    new_dfa_states[i].transitions[dfa.InputSymbols.inputs[1]] = new_dfa_states[k]
-                    break
+                try:
+                    if Trans[equal_state_k[i][0]][symbols[1]] in equal_state_k[k]:
+                        # print("Entered HERE 6")
+                        Trans[new_dfa_states[i]][symbols[1]] = new_dfa_states[k]
+                        # print("Entered HERE 7")
+                        break
+                except:
+                    # print("Key not found in 5")
+                    print()
 
-    elif len(dfa.InputSymbols.inputs) == 1:
+    elif len(symbols) == 1:
         for i in range (len(equal_state_k)):
             for k in range (len(equal_state_k)):
-                if equal_state_k[i][0].transitions[dfa.InputSymbols.inputs[0]] in equal_state_k[k]:
-                    new_dfa_states[i].transitions[dfa.InputSymbols.inputs[0]] = new_dfa_states[k]
+                if Trans[equal_state_k[i][0]][symbols[0]] in equal_state_k[k]:
+                    # print("Entered HERE 9")
+                    Trans[new_dfa_states[i]][symbols[0]] = new_dfa_states[k]
+                    # print("Entered HERE 10")
                     break
-
-    return new_dfa
+    # print(Trans)
+    #return new_dfa
         
 
 if __name__ == '__main__':
@@ -172,22 +218,22 @@ if __name__ == '__main__':
                             "mentioned a correct file or its in the correct standard format")\
             from ex
 
-    states1=list(dfa.states)
-    states1.sort()
+    states=list(dfa.states)
+    states.sort()
     #print(states1)
 
-    symbols1=list(dfa.input_symbols)
-    symbols1.sort()
+    symbols=list(dfa.input_symbols)
+    symbols.sort()
     #print(symbols1)
     
-    Trans1 = dfa.transitions
+    Trans = dfa.transitions
     #print(Trans1)
 
-    start_state1 = dfa.initial_state
+    start_state = dfa.initial_state
     #print (f'starting state1: {start_state1}')
     #print(type(start_state1))
-    final_states1 = set(dfa.final_states)
+    final_states = set(dfa.final_states)
     #print (type(final_states1))
-    SimplificationDFA(input)
+    SimplificationDFA(states, symbols, Trans, start_state, final_states)
     # visualize(json_path)  # visualize the FA
 
