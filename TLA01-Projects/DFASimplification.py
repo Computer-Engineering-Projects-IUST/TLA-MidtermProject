@@ -118,7 +118,7 @@ def SimplificationDFA(states, symbols, FrozTrans, InitialState, FinalStates):
                             print()
 
                 # If two states go through same equivalence list in k_equivalence table they have the same equivalence list in k+1_equivalence 
-                if x in product_equal_states:
+                if x in product_equal_states:           #######################
                     product_equal_states[x].append(equal_state_k[i][j])
                 else:
                     temp = []
