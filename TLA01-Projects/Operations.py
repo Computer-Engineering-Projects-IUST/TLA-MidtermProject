@@ -41,6 +41,7 @@ def StarMain (): #Star
             read_fa(json_path)
             fa = create_standard_fa(1)
             nfa = VisualNFA(fa)
+            final_nfa = fa
     except Exception as ex:
         raise Exception("The input file is neither DFA nor NFA\nCheck whether you "
                             "mentioned a correct file or its in the correct standard format")\
@@ -61,10 +62,10 @@ def StarMain (): #Star
     #print (f'starting state: {start_state}')
     final_states = nfa.final_states
     #print (final_states)
-    Star(states, symbols, Trans, start_state, final_states)
+    Star(final_nfa, states, symbols, Trans, start_state, final_states)
 
 
-def Star (states, symbols, Trans, start_state, final_states):
+def Star (final_nfa, states, symbols, Trans, start_state, final_states):
     new_dict = dict(Trans)
 
     New_Start_State = 'q' + str(len(states))
@@ -77,8 +78,10 @@ def Star (states, symbols, Trans, start_state, final_states):
     #print (states)
 
     new_dict[New_Start_State] = AddLambda(New_Start_State, start_state, new_dict)
-
+    new_dict[New_Start_State] = AppendLambda(New_Start_State, New_Final_State, new_dict)
+    final_states_copy = set(final_states.copy())
     for FinalState in final_states:
+        final_states_copy.remove(FinalState)
         try:                                        # already has a lambda transition
             new_dict[FinalState] = AppendLambda(FinalState, New_Final_State, new_dict)
         
@@ -90,7 +93,8 @@ def Star (states, symbols, Trans, start_state, final_states):
     new_dict[New_Final_State] = AddLambda(New_Final_State, New_Start_State, new_dict)
 
     new_frozendict = frozendict(new_dict)
-
+    final_states_copy.add(New_Final_State)
+    VisulalizeFA(final_nfa, symbols, new_dict, New_Start_State, states, final_states_copy)
     #print(new_frozendict)
 
 
@@ -111,7 +115,7 @@ def UnionMain ():
             read_fa(json_path1)
             fa = create_standard_fa(1)
             nfa1 = VisualNFA(fa)
-
+            final_nfa = fa
             read_fa(json_path2)
             fa = create_standard_fa(1)
             nfa2 = VisualNFA(fa)
@@ -154,10 +158,10 @@ def UnionMain ():
     final_states2 = set(nfa2.final_states)
     #print (final_states2)
 
-    Union(states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2)
+    Union(final_nfa, states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2)
 
 
-def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2):
+def Union (final_nfa, states1, symbols1, Trans1, start_state1, final_states1, states2, symbols2, Trans2, start_state2, final_states2):
     new_dict1 = dict(Trans1)            # Dictionary of first FA Transitions
     new_dict2 = dict(Trans2)            # Dictionary of second FA Transitions
     #print(new_dict2)
@@ -256,7 +260,8 @@ def Union (states1, symbols1, Trans1, start_state1, final_states1, states2, symb
         
         except:                                     # Does not have a lambda transition
             Result_dict[FinalState] = AddLambda(FinalState, New_Final_State, Result_dict)
-
+    Result_symbs = set(symbols1 + symbols2)
+    VisulalizeFA(final_nfa, Result_symbs, Result_dict, New_Start_State, Result_States, [New_Final_State])
     print(Result_dict)
 
 
@@ -337,12 +342,15 @@ def Concat(final_nfa, states1, symbols1, Trans1, start_state1, final_states1, st
     # Result_States.sort()                                                                        # Sorting result states
     # Result_dict[New_Start_State] = AddLambda(New_Start_State, start_state1, Result_dict)        # Connecting new start state to the first FA's start state with lambda
     # print(Result_dict)
-
-    New_Final_State = 'q' + str(len(states1) + len(states2))
+    s1 = 'q'
+    s2 = str(len(states1) + len(states2))
+    #New_Final_State = 'q' + str(len(states1) + len(states2))
+    New_Final_State = "".join([s1, s2])
     Result_States.append(New_Final_State)                                                           # Adding new final state to the list of result states
     Result_States.sort() 
+    New_Final_State2 = 'q' + str(len(states1) + len(states2) + 2) 
     if len(final_states1) > 1:
-        New_Final_State2 = 'q' + str(len(states1) + len(states2) + 2)                             # New final state
+                                    # New final state
         Result_States.append(New_Final_State2)                                                           # Adding new final state to the list of result states
         Result_States.sort()                                                                            # Sorting result states
         #print (Result_States)
@@ -374,65 +382,33 @@ def Concat(final_nfa, states1, symbols1, Trans1, start_state1, final_states1, st
         if state in final_states2:                                                                                      # Changing the final state of the second FA
             final_states2.remove(state)                                                                                 # Removing the old final state from the list of second FA's final states 
             final_states2.add(New_state)                                                                                # Updating the list of second FA's final states (adding the new final state)
-    #print()
-    #print (Result_dict)
-    #print(new_dict2)
     for state in states2:                                                                                               # Updating transitions of the second FA with the new states names
         #print(set(new_dict2[state]['b']))
-        # if ('q1' in set(new_dict2[state]['b'])):
-        #     print ('state in set(new_dict2[state][''])')
         for sym in symbols2:                                                                                            # Checking if there is a transition for every symbol
-            #print(f'current symbol is: {sym}')
             try:                                                                                                        # A state may not have a transition for a specific symbol
                 tempset = set(new_dict2[state][sym])                                                                    # set of states that this state has a transition to
                 tempset_copy = tempset.copy()                                                                           # copy of the temp set
-                #print(f'1. temp set is: {tempset}')
                 for st in tempset_copy:                                                                                 # for each state in the copy of the tempset
-                    #print(f'state is {st}')
                     tempset.remove(st)                                                                                  # removing the state
                     newst = StatesRelationDict[st]
-                    #print(f'type of newst is: {type(newst)}')
-                    tempset.add(newst)                                                                                  # adding the new name from the dictionary
-                    #print('tempst updated')
-                #print(f'2. temp set is: {tempset}')
-                #print (type(new_dict2[state][sym]))
+                    tempset.add(newst)
                 tempset = frozenset(tempset)
                 connection = frozendict({sym:tempset})
-                # print(connection)
-                # print(f'Version 1 of new_dict2_copy[state] : {new_dict2_copy[state]}')
-                #new_dict2_copy[state] = connection
-                Result_dict[StatesRelationDict[state]] = connection                                                     # updating the result dict
-                print(f"{state}ssssssssssss{StatesRelationDict[state]}")
-                # print(f'Version 2 of new_dict2_copy[state] : {new_dict2_copy[state]}')
-                # print(tempset)
+                Result_dict[StatesRelationDict[state]] = connection
             except Exception as e:
-                #print(f'Error is: {e}')
                 print()
-            #print("*********************")
 
-    print(Result_dict)
-    # print("*************")
-    # print(new_dict2_copy)
-    # for state in states1:
-    #     del new_dict2_copy[state]
-
-    
-    #Result_dict.update(new_dict2_copy)
-    #print(f'Start State2: {start_state2}   and final state2: {final_states2}')
-    
-    #Result_dict[New_Start_State] = AppendLambda(New_Start_State, start_state2, Result_dict)         # connecting the new start state to the second FA's start state with lambda
-    #print (Result_dict)
-    final_states2.clear()
     
     if len(final_states1) > 1:
-        Result_dict[New_Final_State2] = AddLambda(New_Final_State2, start_state2, Result_dict) ###############
-        final_states2.add(New_Final_State2)
+        Result_dict[New_Final_State2] = AddLambda(New_Final_State2, start_state2, Result_dict)
     else:
-        final_states2.add(New_Final_State)
-        #Result_dict[final_states1[0]] = AddLambda(list(final_states1)[0], start_state2, Result_dict)
         for FS in final_states1:
+            print(f'FS is {FS}')
             Result_dict[FS] = AddLambda(FS, start_state2, Result_dict)
+
+
     for FinalState in final_states2:                                                                # connecting the final states of the second FA to the new final state with lambda
+        print(f'Final state is: {FinalState}')
         try:                                        # already has a lambda transition
             Result_dict[FinalState] = AppendLambda(FinalState, New_Final_State, Result_dict)
         
@@ -440,21 +416,25 @@ def Concat(final_nfa, states1, symbols1, Trans1, start_state1, final_states1, st
             Result_dict[FinalState] = AddLambda(FinalState, New_Final_State, Result_dict)
     Result_symbs = set(symbols1 + symbols2)
     print(Result_dict)
-    # print(type(set(New_Final_State)))
-    
-    final_nfa["initial_state"] = start_state1
+    VisulalizeFA(final_nfa, Result_symbs, Result_dict, start_state1, Result_States, final_states2)
+
+
+def VisulalizeFA (final_nfa, Symbols, Result_dict, start_state, Result_States, final_states):
+    Result_symbs = set(Symbols)
+    final_nfa["initial_state"] = start_state
     final_nfa["states"] = set(Result_States)
     final_nfa["transitions"] = Result_dict
     final_nfa["input_symbols"] = set(Result_symbs)
-    final_nfa["final_states"] =  set(final_states2)
+    final_nfa["final_states"] =  set(final_states)
     vis = VisualNFA(final_nfa)
     vis.show_diagram()
 
+
 if __name__ == '__main__':
     
-    #StarMain()
-    #UnionMain()
-    ConcatMain()
+    StarMain()
+    # UnionMain()
+    #ConcatMain()
     print("hello")
 
     
