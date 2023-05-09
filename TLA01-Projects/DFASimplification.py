@@ -8,78 +8,54 @@ from FA.nfa import VisualNFA
 from utils import read_fa, create_standard_fa
 
 from automata.fa.nfa import NFA
-class DFA:
-    def __init__(self, all_states=None, all_input_symbols=None, initial_state=None, final_states=None, states=None, input_symbols=None, transitions=None):
-        if states is not None:
-            self.States = states
-            self.InitialState = initial_state
-            self.FinalStates = final_states
-            self.InputSymbols = input_symbols.copy()
-            for i in range(len(self.States)):
-                transition = transitions[self.States[i].state_ID]
-                self.States[i].transitions = {}
-                for item in transition.items():
-                    state_index = next((index for (index, d) in enumerate(self.States) if d.state_ID == item[1]), None)
-                    self.States[i].transitions[item[0]] = self.States[state_index]
-        elif all_states is not None:
-            self.States = [NewState(state) for state in all_states]
-            self.FinalStates = [NewState(state) for state in final_states]
-            self.InputSymbols = all_input_symbols.copy()
-            for i in range(len(self.States)):
-                if self.States[i].state_ID == initial_state:
-                    self.InitialState = self.States[i]
-                    break
-        else:
-            self.States = []
-            self.FinalStates = []
-            self.InputSymbols = all_input_symbols.copy()
-            for i in range(len(final_states)):
-                self.FinalStates.append(NewState(final_states[i]))
-            for i in range(len(all_states)):
-                self.States.append(NewState(all_states[i]))
-            for i in range(len(all_states)):
-                if all_states[i] == initial_state:
-                    self.InitialState = self.States[i]
-                    break
-
-
 class NewState:
-    def __init__(self, state_name):
+    def __init__(self, state_ID: str):
+        self.state_ID = state_ID
+        self.transitions = { }
         self.Visit = False
-        self.state_ID = state_name
-        self.string_nfa_states = ""
-        self.includedNFAStates = []
-        self.transitions = {}
 
-def DFS_Visit_Recursive(dfa, n, dfs_visit):
-    n.Visit = True
-    for i in range(len(dfa.InputSymbols.inputs)):
-        if not n.transitions[dfa.InputSymbols.inputs[i]].Visit:
-            dfs_visit.append(n.transitions[dfa.InputSymbols.inputs[i]])
-            DFS_Visit_Recursive(dfa, n.transitions[dfa.InputSymbols.inputs[i]], dfs_visit)
+def DFS_Visit_Recursive(Visited, state, dfs_visit, InputSymbols, transitions):
+    Visited[state] = True
+    for i in range(len(InputSymbols)):
+        try:
+            # print(transitions[state])
+            # print(InputSymbols[i])
+            # print(transitions[state][InputSymbols[i]])
 
-def SimplificationDFA(dfa):
+            if Visited[transitions[state][InputSymbols[i]]] == False:
+                dfs_visit.append(transitions[state][InputSymbols[i]])
+                DFS_Visit_Recursive(Visited, transitions[state][InputSymbols[i]], dfs_visit, InputSymbols, transitions)
+        except:
+            print()
+
+def SimplificationDFA(states, symbols, FrozTrans, InitialState, FinalStates):
+    Trans = dict(FrozTrans)
+    FinalStates = list(FinalStates)
     dfs_visit = []
-    dfs_visit.append(dfa.InitialState)
-
+    dfs_visit.append(InitialState)
+    Visited = {}
+    for s in states:
+        Visited[s] = False
     # First we go through vertexes by DFS to define non-reachable states
-    DFS_Visit_Recursive(dfa, dfa.InitialState, dfs_visit)
-    dfa.States = dfs_visit
+    DFS_Visit_Recursive(Visited, InitialState, dfs_visit, symbols, Trans)
+    #print(f'Visited is: {Visited}')
+    states = dfs_visit
+    
     new_final_state = []
     # Remove non-reachable states from DFA
-    for i in range(len(dfa.FinalStates)):
-        if dfa.FinalStates[i] in dfs_visit:
-            new_final_state.append(dfa.FinalStates[i])
-    dfa.FinalStates = new_final_state
+    for i in range(len(FinalStates)):
+        if FinalStates[i] in dfs_visit:
+            new_final_state.append(FinalStates[i])
+    FinalStates = new_final_state
 
-    # Construct zero_equivalence by seperating final and non-final states
+    # Construct zero_equivalence by separating final and non-final states
     final = []
     nonfinal = []
-    for i in range(len(dfa.States)):
-        if dfa.States[i] in dfa.FinalStates:
-            final.append(dfa.States[i])
+    for i in range(len(states)):
+        if states[i] in FinalStates:
+            final.append(states[i])
         else:
-            nonfinal.append(dfa.States[i])
+            nonfinal.append(states[i])
 
     # Define list for k_equivalence to reach k+1_equivalence(next equivalence table)
     equal_state_k = []
@@ -88,93 +64,142 @@ def SimplificationDFA(dfa):
 
     # Do this while loop till k+1_equivalence table is as same as k_equivalence
     while True:
-        # Create states list as k+1_equivalence table
+        # Create states list as k+1_equivalence table   
         equal_state_k_next = []
         for i in range(len(equal_state_k)):
             # For states that were equal in k_equivalence table we check equivalency in k+1_equivalence table
-            # Create a dictionary for seperating states that are in the same list in k_equivalence table
-            product_equal_states = {}
-            # for states that were equal in k_equivalence table do this for loop
-            for j in range(len(equal_state_k[i])):
+            # Create a dictionary for separating states that are in the same list in k_equivalence table 
+            product_equal_states = { }
+            # For states that were equal in k_equivalence table do this for loop
+            Current_equal_state_k = equal_state_k[i]
+            for j in range(len(Current_equal_state_k)):
                 x = ""
-                # Check whether we have 2 input symbols
-                if len(dfa.InputSymbols.inputs) == 2:
-                    # Check whether for each input symbol which eqivalence list we reach + add first state of the previous list to x(string)
+                # Check whether we have 2 input symbols 
+                if len(symbols) == 2:
+                    # Check whether for each input symbol which equivalence list we reach + add first state of the previous list to x(string)
                     for k in range(len(equal_state_k)):
-                        if equal_state_k[k].count(equal_state_k[i][j].transitions[dfa.InputSymbols.inputs[0]]):
-                            x += equal_state_k[k][0].state_ID
-                            break
+                        # print(f"Trans[equal_state_k[i][j]][symbols[0]] is : {Trans[equal_state_k[i][j]][symbols[0]]}")
+                        # print(f"equal_state_k[k] is : {equal_state_k[k]}")
+                        CurrentTrans = Trans[equal_state_k[k]][symbols[0]]
+                        try:
+                            #  if Trans[equal_state_k[i][j]][symbols[0]] in equal_state_k[k]:
+                            #     # print("Entered HERE 1")
+                            #     x += Trans[equal_state_k[i][j]][symbols[0]][]
+                            #     break
+                           
+                            if symbols[0] in CurrentTrans:
+                                # print("Entered HERE 1")
+                                x += Trans[Current_equal_state_k[j]][symbols[0]]
+                                break
+                        except:
+                            # print("Key not found in 1")
+                            print()
                     for k in range(len(equal_state_k)):
-                        if equal_state_k[k].count(equal_state_k[i][j].transitions[dfa.InputSymbols.inputs[1]]):
-                            x += equal_state_k[k][0].state_ID
-                            break
-                elif len(dfa.InputSymbols.inputs) == 1:
-                    # Check whether we have only 1 input symbol
+                        CurrentTrans = Trans[equal_state_k[k]]
+                        try:
+                           if symbols[1] in CurrentTrans:
+                                # print("Entered HERE 1")
+                                x += Trans[Current_equal_state_k[j]][symbols[1]]
+                                break
+                        except:
+                            # print("Key not found in 2")
+                            print()
+                elif len(dfa.InputSymbols) == 1:
+                    # Check whether we have only 1 input symbol 
                     # Repeat previous operations for one input symbol
                     for k in range(len(equal_state_k)):
-                        if equal_state_k[k].count(equal_state_k[i][j].transitions[dfa.InputSymbols.inputs[0]]):
-                            x += equal_state_k[k][0].state_ID
-                            break
-                # if two states go through same euivalence list in k_equivalence table they have the same euivalence list in k+1_equivalence
+                        CurrentTrans = Trans[equal_state_k[k]]
+                        try:
+                            if symbols[0] in CurrentTrans:
+                                # print("Entered HERE 1")
+                                x += Trans[Current_equal_state_k[j]][symbols[0]]
+                                break
+                        except:
+                            # print("Key not found in 3")
+                            print()
+
+                # If two states go through same equivalence list in k_equivalence table they have the same equivalence list in k+1_equivalence 
                 if x in product_equal_states:
                     product_equal_states[x].append(equal_state_k[i][j])
                 else:
                     temp = []
                     temp.append(equal_state_k[i][j])
                     product_equal_states[x] = temp
+
             # Construct k+1_equivalence table
-            for tmp in product_equal_states.values():
+            for tmp in product_equal_states:
                 equal_state_k_next.append(tmp)
 
-        # Chekck whether k+1_equivalence and k_equivalence are the same if yes --> quit while loop if no --> go through next equivalenc table
+        # Check whether k+1_equivalence and k_equivalence are the same if yes --> quit while loop if no --> go through next equivalence table
         if len(equal_state_k_next) == len(equal_state_k):
             break
 
         equal_state_k = equal_state_k_next
+    print(equal_state_k)
 
-    # For each equivalency list in k_equivalence table order the states by state ID
+    # For each equivalence list in k_equivalence table order the states by state ID
     for i in range(len(equal_state_k)):
-        equal_state_k[i] = sorted(equal_state_k[i], key=lambda x: int(x.state_ID.replace("q", "")))
-
+        equal_state_k[i] = sorted(equal_state_k[i], key=lambda x: re.sub("q", "", x)) #################################
+    print(equal_state_k)
     # For every list in k_equivalence table order the states in each list by the first state of the list
-    equal_state_k = sorted(equal_state_k, key=lambda x: int(x[0].state_ID.replace("q", "")))
+    equal_state_k = sorted(equal_state_k, key=lambda x: re.sub("q", "", x[0]))  ##############################
 
     # Construct new DFA by the result of equivalence table
     new_dfa_states = []
+    print(equal_state_k)
     for i in range(len(equal_state_k)):
         x = ""
         for j in range(len(equal_state_k[i])):
-            x += equal_state_k[i][j].state_ID
-
-        new_dfa_states.append(NewState(x))
+            x += equal_state_k[i][j]
+        print(f'x is: {x}')
+        new_dfa_states.append(x)
+    print(new_dfa_states)
+    ###########################################################
     new_dfa_final_states = []
-    for i in range(len(equal_state_k)):
-        if equal_state_k[i][0] in dfa.FinalStates:
+    for i in range (len(equal_state_k)):
+        if equal_state_k[i][0] in FinalStates :
             new_dfa_final_states.append(new_dfa_states[i])
-    new_dfa_initial_state = None
+
+    new_dfa_initial_state=None
     for i in range(len(equal_state_k)):
-        if dfa.InitialState in equal_state_k[i]:
-            new_dfa_initial_state = new_dfa_states[i]
+        if(InitialState in equal_state_k[i]):
+            new_dfa_initial_state=new_dfa_states[i]
             break
-    new_dfa = DFA(0, new_dfa_states, dfa.InputSymbols, new_dfa_initial_state, new_dfa_final_states)
-    if len(dfa.InputSymbols.inputs) == 2:
-        for i in range(len(equal_state_k)):
-            for k in range(len(equal_state_k)):
-                if equal_state_k[k].count(equal_state_k[i][0].transitions[dfa.InputSymbols.inputs[0]]):
-                    new_dfa_states[i].transitions[dfa.InputSymbols.inputs[0]] = new_dfa_states[k]
+    
+    #new_dfa = DFA(0, new_dfa_states, symbols, new_dfa_initial_state, new_dfa_final_states)
+    if len(symbols) == 2:
+        for i in range (len(equal_state_k)):
+            for k in range (len(equal_state_k)):
+                try:
+                    if Trans[equal_state_k[i][j]][symbols[0]] in equal_state_k[k]:
+                        # print("Entered HERE 4")
+                        Trans[new_dfa_states[i]][symbols[0]] = new_dfa_states[k]
+                        # print("Entered HERE 5")
+                        break
+                except:
+                    # print("Key not found in 4")
+                    print()
+            for k in range (len(equal_state_k)):
+                try:
+                    if Trans[equal_state_k[i][0]][symbols[1]] in equal_state_k[k]:
+                        # print("Entered HERE 6")
+                        Trans[new_dfa_states[i]][symbols[1]] = new_dfa_states[k]
+                        # print("Entered HERE 7")
+                        break
+                except:
+                    # print("Key not found in 5")
+                    print()
+
+    elif len(symbols) == 1:
+        for i in range (len(equal_state_k)):
+            for k in range (len(equal_state_k)):
+                if Trans[equal_state_k[i][0]][symbols[0]] in equal_state_k[k]:
+                    # print("Entered HERE 9")
+                    Trans[new_dfa_states[i]][symbols[0]] = new_dfa_states[k]
+                    # print("Entered HERE 10")
                     break
-            for k in range(len(equal_state_k)):
-                if equal_state_k[k].count(equal_state_k[i][0].transitions[dfa.InputSymbols.inputs[1]]):
-                    new_dfa_states[i].transitions[dfa.InputSymbols.inputs[1]] = new_dfa_states[k]
-                    break
-    elif len(dfa.InputSymbols.inputs) == 1:
-        # Check whether we have only 1 input symbol
-        for i in range(len(equal_state_k)):
-            for k in range(len(equal_state_k)):
-                if equal_state_k[k].count(equal_state_k[i][0].transitions[dfa.InputSymbols.inputs[0]]):
-                    new_dfa_states[i].transitions[dfa.InputSymbols.inputs[0]] = new_dfa_states[k]
-                    break
-    return new_dfa
+    # print(Trans)
+    #return new_dfa
         
 
 if __name__ == '__main__':
@@ -194,29 +219,7 @@ if __name__ == '__main__':
                             "mentioned a correct file or its in the correct standard format")\
             from ex
 
-    states=list(dfa.states)
-    states.sort()
-    #print(states1)
 
-    symbols=list(dfa.input_symbols)
-    symbols.sort()
-    #print(symbols1)
-    
-    Trans = dfa.transitions
-    #print(Trans1)
-
-    start_state = dfa.initial_state
-    #print (f'starting state1: {start_state1}')
-    #print(type(start_state1))
-    final_states = set(dfa.final_states)
     #print (type(final_states1))
-    #SimplificationDFA(states, symbols, Trans, start_state, final_states)
+    SimplificationDFA(states, symbols, Trans, start_state, final_states)
     # visualize(json_path)  # visualize the FA
-    initial = NewState(start_state)
-    final_states_set = set()
-    print(type(final_states_set))
-    for s in final_states:
-        final_states_set.add(s)
-    D = DFA(states, symbols, start_state, final_states, states, symbols, Trans)
-    print(SimplificationDFA(D))
-
