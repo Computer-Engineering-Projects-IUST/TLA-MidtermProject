@@ -22,12 +22,12 @@ if __name__ == '__main__':
     """ the main function for visualize the FA"""
     args = sys.argv[1:]
     #json_path = args[0]   # the relative path of the json file containing the dfa or nfa in the desired format
-    json_path = "samples/phase2-sample/in/input3.json"
+    json_path = "samples/phase2-sample/in/input1.json"
     try:
             read_fa(json_path)
             fa = create_standard_fa(0)
             dfa = VisualDFA(fa)
-            dfa.show_diagram()
+            # dfa.show_diagram()
 
     except Exception as ex:
         raise Exception("The input file is neither DFA nor NFA\nCheck whether you "
@@ -107,7 +107,36 @@ if __name__ == '__main__':
             currentStates=newGroups
             CurrentStatesIndex=newGroupsIndex
 print("done")
+stringStates=set()
+for s in currentStates:
+    stringStates.add('-'.join(s))
+if len(currentStates[CurrentStatesIndex[initialState]])!=1:
+    fa["initial_state"]='-'.join(currentStates[CurrentStatesIndex[initialState]])
+fa["states"]=stringStates
+StringFinalStates=set()
+if len(finalStates)!=1:
+    for i in finalStates:
+        for s in currentStates[CurrentStatesIndex[i]]:
+            StringFinalStates.add('-'.join(s))
 
+    fa["final_states"]=StringFinalStates
+newTr={}
+for gp in currentStates:
+    if len(gp)==1:
+        gpString=str(list(gp)[0])
+        newTr[list(stringStates)[currentStates.index(gp)]]={}
+        for symbol in symbols:
+            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:list(stringStates)[CurrentStatesIndex[Transitions[gpString][symbol]]]})
+    else:
+        newTr[list(stringStates)[currentStates.index(gp)]]={}
+        for symbol in symbols:
+            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:list(stringStates)[CurrentStatesIndex[Transitions[list(gp)[0]][symbol]]]})
+
+fa["transitions"]=newTr
+
+newFA = VisualNFA(fa)
+newFA.show_diagram()
+print("done")
             
 
 
