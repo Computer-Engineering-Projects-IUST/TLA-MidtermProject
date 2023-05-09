@@ -198,7 +198,7 @@ def SimplificationDFA(states, symbols, FrozTrans, InitialState, FinalStates):
                     Trans[new_dfa_states[i]][symbols[0]] = new_dfa_states[k]
                     # print("Entered HERE 10")
                     break
-    # print(Trans)
+    print(Trans)
     #return new_dfa
         
 

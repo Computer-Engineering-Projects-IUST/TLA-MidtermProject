@@ -18,6 +18,16 @@ def DFS_Visit_Recursive(Visited, state, dfs_visit, InputSymbols, transitions):
             print()
 
 
+def VisulalizeFA (final_nfa, Symbols, Result_dict, start_state, Result_States, final_states):
+    Result_symbs = set(Symbols)
+    final_nfa["initial_state"] = start_state
+    final_nfa["states"] = set(Result_States)
+    final_nfa["transitions"] = Result_dict
+    final_nfa["input_symbols"] = set(Result_symbs)
+    final_nfa["final_states"] =  set(final_states)
+    vis = VisualNFA(final_nfa)
+    vis.show_diagram()
+
 if __name__ == '__main__':
     """ the main function for visualize the FA"""
     args = sys.argv[1:]
@@ -106,6 +116,8 @@ if __name__ == '__main__':
         else:
             currentStates=newGroups
             CurrentStatesIndex=newGroupsIndex
+# print (newGroups)
+# print(currentStates)
 print("done")
 stringStates=set()
 for s in currentStates:
@@ -120,32 +132,45 @@ if len(finalStates)!=1:
             StringFinalStates.add('-'.join(s))
 
     fa["final_states"]=StringFinalStates
+# NewcurrentStates = currentStates.sort()
 newTr={}
 for gp in currentStates:
     if len(gp)==1:
+        print("Len is 1")
         gpString=str(list(gp)[0])
+        # print 
         newTr[list(stringStates)[currentStates.index(gp)]]={}
         for symbol in symbols:
-            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:list(stringStates)[CurrentStatesIndex[Transitions[gpString][symbol]]]})
+            dest = list(stringStates)[CurrentStatesIndex[Transitions[gpString][symbol]]]
+            if dest == initialState:
+                dest = finalStates[0]
+            elif dest == finalStates[0]:
+                dest = initialState
+            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:dest})
     else:
+        print("Len is not 1")
         newTr[list(stringStates)[currentStates.index(gp)]]={}
         for symbol in symbols:
-            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:list(stringStates)[CurrentStatesIndex[Transitions[list(gp)[0]][symbol]]]})
+            dest = list(stringStates)[CurrentStatesIndex[Transitions[list(gp)[0]][symbol]]]
+            if dest == initialState:
+                dest = finalStates[0]
+            elif dest == finalStates[0]:
+                dest = initialState
+            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:dest})
+# print (newTr[initialState])
+# newTr[finalStates], newTr[initialState] = newTr[initialState], newTr[finalStates]
+# for state in stringStates:
+#     print(state)
+#     if state == initialState:
 
+print(f'Final states: {fa["final_states"]}')
+print(f'Initial states: {fa["initial_state"]}')
+print(f'states: {fa["states"]}')
+print (newTr)
 fa["transitions"]=newTr
-
+# print (type(currentStates))
 newFA = VisualNFA(fa)
 newFA.show_diagram()
+VisulalizeFA(fa, symbols, newTr, initialState, currentStates, finalStates)
 print("done")
-            
-
-
-
-
-
-
-
-
-
-
 
