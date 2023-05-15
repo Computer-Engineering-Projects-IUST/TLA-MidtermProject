@@ -416,7 +416,7 @@ def Concat(final_nfa, states1, symbols1, Trans1, start_state1, final_states1, st
             Result_dict[FinalState] = AddLambda(FinalState, New_Final_State, Result_dict)
     Result_symbs = set(symbols1 + symbols2)
     print(Result_dict)
-    VisulalizeFA(final_nfa, Result_symbs, Result_dict, start_state1, Result_States, final_states2)
+    VisulalizeFA(final_nfa, Result_symbs, Result_dict, start_state1, Result_States, {New_Final_State})
 
 
 def VisulalizeFA (final_nfa, Symbols, Result_dict, start_state, Result_States, final_states):
@@ -432,9 +432,9 @@ def VisulalizeFA (final_nfa, Symbols, Result_dict, start_state, Result_States, f
 
 if __name__ == '__main__':
     
-    StarMain()
+    # StarMain()
     # UnionMain()
-    #ConcatMain()
+    ConcatMain()
     print("hello")
 
     
