@@ -119,58 +119,38 @@ if __name__ == '__main__':
 # print (newGroups)
 # print(currentStates)
 print("done")
-stringStates=set()
-for s in currentStates:
-    stringStates.add('-'.join(s))
-if len(currentStates[CurrentStatesIndex[initialState]])!=1:
-    fa["initial_state"]='-'.join(currentStates[CurrentStatesIndex[initialState]])
-fa["states"]=stringStates
-StringFinalStates=set()
-if len(finalStates)!=1:
-    for i in finalStates:
-        for s in currentStates[CurrentStatesIndex[i]]:
-            StringFinalStates.add('-'.join(s))
 
-    fa["final_states"]=StringFinalStates
-# NewcurrentStates = currentStates.sort()
+stringStates=[]
+for s in currentStates:
+    stringStates.append(''.join(s))
+if len(currentStates[CurrentStatesIndex[initialState]])!=1:
+    fa["initial_state"]=''.join(currentStates[CurrentStatesIndex[initialState]])
+StatesSet=set()
+
+fa["states"]=set(stringStates) ###order is changed
+StringNewFinalStates=set()
+# if (len(finalStates)!=1):
+for i in fa["final_states"]:
+    StringNewFinalStates.add(stringStates[CurrentStatesIndex[i]])
+
+
+fa["final_states"]=StringNewFinalStates
+
 newTr={}
 for gp in currentStates:
     if len(gp)==1:
-        print("Len is 1")
         gpString=str(list(gp)[0])
-        # print 
         newTr[list(stringStates)[currentStates.index(gp)]]={}
         for symbol in symbols:
-            dest = list(stringStates)[CurrentStatesIndex[Transitions[gpString][symbol]]]
-            if dest == initialState:
-                dest = finalStates[0]
-            elif dest == finalStates[0]:
-                dest = initialState
-            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:dest})
+            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:list(stringStates)[CurrentStatesIndex[Transitions[gpString][symbol]]]})
     else:
-        print("Len is not 1")
-        newTr[list(stringStates)[currentStates.index(gp)]]={}
+        stringStatesItem=stringStates[CurrentStatesIndex[list(gp)[0]]]
+        newTr[stringStatesItem]={}
         for symbol in symbols:
-            dest = list(stringStates)[CurrentStatesIndex[Transitions[list(gp)[0]][symbol]]]
-            if dest == initialState:
-                dest = finalStates[0]
-            elif dest == finalStates[0]:
-                dest = initialState
-            newTr[list(stringStates)[currentStates.index(gp)]].update({symbol:dest})
-# print (newTr[initialState])
-# newTr[finalStates], newTr[initialState] = newTr[initialState], newTr[finalStates]
-# for state in stringStates:
-#     print(state)
-#     if state == initialState:
+            newTr[stringStatesItem].update({symbol:stringStates[CurrentStatesIndex[Transitions[list(gp)[0]][symbol]]]})
 
-print(f'Final states: {fa["final_states"]}')
-print(f'Initial states: {fa["initial_state"]}')
-print(f'states: {fa["states"]}')
-print (newTr)
 fa["transitions"]=newTr
-# print (type(currentStates))
-newFA = VisualNFA(fa)
-newFA.show_diagram()
-VisulalizeFA(fa, symbols, newTr, initialState, currentStates, finalStates)
-print("done")
 
+newFA = VisualDFA(fa)
+newFA.show_diagram()
+print("done")
