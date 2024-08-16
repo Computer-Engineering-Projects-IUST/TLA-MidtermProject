@@ -1,5 +1,5 @@
 # TLA Midterm Project
-This Midterm project is done for the Theory Of Languages And Automata course held at IUST - in spring 2023
+This Midterm project is done for the Theory Of Languages And Automata course held at IUST - in spring 2023 <br/>
 It consists of 5 phases: <br/>
 Phase 1: NFA to DFA Conversion <br/>
 Phase 2: DFA Simplification <br/>
